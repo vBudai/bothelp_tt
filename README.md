@@ -28,7 +28,12 @@ cd docker
 docker-compose up -d --build
 ```
 
-2. Запуск теста обработки очереди:
+2. Сборка пакетов:
+```bash
+docker exec -it bothelp_tt-php-1 composer install
+```
+
+3. Запуск теста обработки очереди:
 ```php
 docker exec -it bothelp_tt-php-1 vendor/bin/phpunit
 ```
