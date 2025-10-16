@@ -10,15 +10,22 @@ class ProcessHelper
 {
     use RunMessengerConsumerTrait;
 
+    private string $consolePath;
+
+    public function __construct()
+    {
+        $this->consolePath = dirname(__DIR__, 4) . '/bin/console';
+    }
+
     /**
      * @return Process[]
      */
-    public function startWorkersProcessed(string $consolePath): array
+    public function startWorkersProcessed(): array
     {
         $processes = [];
         for ($i = 0; $i < EventMessage::SHARDS_COUNT; $i++) {
             $processes[] = $this->runMessengerConsumeEvents(
-                $consolePath,
+                $this->consolePath,
                 'events',
                 "events.shard.$i",
             );

@@ -1,25 +1,23 @@
 <?php
 namespace App\Tests\Bus\Event;
 
-use App\Bus\Event\EventMessage;
 use App\Tests\Bus\Event\Helper\ProcessHelper;
 use App\Tests\Trait\RunBinConsoleTrait;
 use App\Tests\Trait\RunMessengerConsumerTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Process\Process;
 
 class EventOrderHandlingTest extends KernelTestCase
 {
     use RunBinConsoleTrait;
     use RunMessengerConsumerTrait;
 
-    private ProcessHelper $processHelper;
+    private readonly ProcessHelper $processHelper;
 
-    private const EVENTS_COUNT = 500;
+    private readonly string $consolePath;
+    private readonly string $logFile;
 
-    private string $consolePath;
-
-    private string $logFile;
+    private readonly int $eventsCount;
+    private readonly int $maxAccountId;
 
     protected function setUp(): void
     {
@@ -27,6 +25,9 @@ class EventOrderHandlingTest extends KernelTestCase
 
         $this->consolePath = dirname(__DIR__, 3) . '/bin/console';
         $this->processHelper = new ProcessHelper();
+
+        $this->eventsCount  = (int)($_ENV['EVENTS_COUNT']);
+        $this->maxAccountId = (int)($_ENV['MAX_ACCOUNT_ID']);
 
         $logsDir = self::getContainer()->getParameter('kernel.logs_dir');
         $this->logFile = $logsDir . '/dev.log';
@@ -37,7 +38,7 @@ class EventOrderHandlingTest extends KernelTestCase
         $this->runBinConsole(
             'app:generate-events',
             600,
-            ['--count' => self::EVENTS_COUNT, '--max-acc-id' => 10]
+            ['--count' => $this->eventsCount, '--max-acc-id' => $this->maxAccountId]
         );
     }
 
@@ -48,9 +49,9 @@ class EventOrderHandlingTest extends KernelTestCase
     {
         // Act
         dump('Запускаем воркеры');
-        $processes = $this->processHelper->startWorkersProcessed($this->consolePath);
+        $processes = $this->processHelper->startWorkersProcessed();
         dump('Ждём пока завершатся');
-        $this->processHelper->waitTillWorkersProcessed($this->logFile, self::EVENTS_COUNT);
+        $this->processHelper->waitTillWorkersProcessed($this->logFile, $this->eventsCount);
         $this->processHelper->stopProcesses($processes);
 
 
@@ -84,9 +85,9 @@ class EventOrderHandlingTest extends KernelTestCase
         }
 
         $this->assertSame(
-            self::EVENTS_COUNT,
+            $this->eventsCount,
             $totalProcessed,
-            "Expected exactly " . self::EVENTS_COUNT . " events to be processed"
+            "Expected exactly $this->eventsCount events to be processed"
         );
     }
 }
