@@ -1,0 +1,45 @@
+name: bothelp_tt
+
+services:
+
+  php:
+    environment:
+      XDEBUG_MODE: develop,debug
+      XDEBUG_CONFIG: "client_host=host.docker.internal client_port=${XDEBUG_PORT}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    build:
+      context: .
+      dockerfile: ./php/Dockerfile
+    volumes:
+      - ./..:/var/www
+    networks:
+      - bothelp_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.25-alpine
+    ports:
+      - "${NGINX_PORT}:80"
+    volumes:
+      - ./..:/var/www
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - php
+    networks:
+      - bothelp_network
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:4.1.2-management
+    ports:
+      - "${RABBIT_PORT}:15672"
+    networks:
+      - bothelp_network
+    depends_on:
+      - php
+
+
+networks:
+  bothelp_network:
+    driver: bridge
