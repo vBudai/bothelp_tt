@@ -2,7 +2,6 @@
 
 namespace App\Tests\Bus\Event\Helper;
 
-use App\Bus\Event\EventMessage;
 use App\Tests\Trait\RunMessengerConsumerTrait;
 use Symfony\Component\Process\Process;
 
@@ -14,7 +13,7 @@ class ProcessHelper
 
     public function __construct()
     {
-        $this->consolePath = dirname(__DIR__, 4) . '/bin/console';
+        $this->consolePath = dirname(__DIR__, 4).'/bin/console';
     }
 
     /**
@@ -23,7 +22,7 @@ class ProcessHelper
     public function startWorkersProcessed(): array
     {
         $processes = [];
-        for ($i = 0; $i < EventMessage::SHARDS_COUNT; $i++) {
+        for ($i = 0; $i < $_ENV['EVENTS_SHARDS_COUNT']; ++$i) {
             $processes[] = $this->runMessengerConsumeEvents(
                 $this->consolePath,
                 'events',
@@ -49,7 +48,7 @@ class ProcessHelper
                 $lines = file($logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
                 foreach ($lines as $line) {
                     if (str_contains($line, 'Received event message')) {
-                        $count++;
+                        ++$count;
                     }
                 }
             }

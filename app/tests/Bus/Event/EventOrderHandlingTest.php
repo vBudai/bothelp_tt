@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Tests\Bus\Event;
 
 use App\Tests\Bus\Event\Helper\ProcessHelper;
@@ -23,14 +24,14 @@ class EventOrderHandlingTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $this->consolePath = dirname(__DIR__, 3) . '/bin/console';
+        $this->consolePath = dirname(__DIR__, 3).'/bin/console';
         $this->processHelper = new ProcessHelper();
 
-        $this->eventsCount  = (int)($_ENV['EVENTS_COUNT']);
-        $this->maxAccountId = (int)($_ENV['MAX_ACCOUNT_ID']);
+        $this->eventsCount = (int) $_ENV['EVENTS_COUNT'];
+        $this->maxAccountId = (int) $_ENV['MAX_ACCOUNT_ID'];
 
         $logsDir = self::getContainer()->getParameter('kernel.logs_dir');
-        $this->logFile = $logsDir . '/dev.log';
+        $this->logFile = $logsDir.'/dev.log';
         if (file_exists($this->logFile)) {
             unlink($this->logFile);
         }
@@ -45,7 +46,7 @@ class EventOrderHandlingTest extends KernelTestCase
     /**
      * @throws \Exception
      */
-    public function testEventHandingOrder()
+    public function testEventHandlingOrder(): void
     {
         // Act
         dump('Запускаем воркеры');
@@ -53,7 +54,6 @@ class EventOrderHandlingTest extends KernelTestCase
         dump('Ждём пока завершатся');
         $this->processHelper->waitTillWorkersProcessed($this->logFile, $this->eventsCount);
         $this->processHelper->stopProcesses($processes);
-
 
         // Assert - проверка кол-ва обработанных событий и их порядка
         $lastIdPerAccount = [];
@@ -64,24 +64,27 @@ class EventOrderHandlingTest extends KernelTestCase
         $totalProcessed = 0;
         $lines = file($this->logFile, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) ?: [];
         foreach ($lines as $line) {
-            if (str_contains($line, 'Received event message')) {
-                ++$totalProcessed;
-                preg_match('/"id":(\d+).*"accountId":(\d+)/', $line, $matches);
-                if (count($matches) === 3) {
-                    $eventId   = (int)$matches[1];
-                    $accountId = (int)$matches[2];
-
-                    if (isset($lastIdPerAccount[$accountId])) {
-                        $this->assertGreaterThan(
-                            $lastIdPerAccount[$accountId],
-                            $eventId,
-                            "Event order is broken for account $accountId: previous id={$lastIdPerAccount[$accountId]}, current id=$eventId"
-                        );
-                    }
-
-                    $lastIdPerAccount[$accountId] = $eventId;
-                }
+            if (!str_contains($line, 'Received event message')) {
+                continue;
             }
+
+            ++$totalProcessed;
+            preg_match('/"id":(\d+).*"accountId":(\d+)/', $line, $matches);
+            if (3 !== count($matches)) {
+                continue;
+            }
+
+            $eventId = (int) $matches[1];
+            $accountId = (int) $matches[2];
+            if (isset($lastIdPerAccount[$accountId])) {
+                $this->assertGreaterThan(
+                    minimum: $lastIdPerAccount[$accountId],
+                    actual: $eventId,
+                    message: "Event order is broken for account $accountId: previous id={$lastIdPerAccount[$accountId]}, current id=$eventId"
+                );
+            }
+
+            $lastIdPerAccount[$accountId] = $eventId;
         }
 
         $this->assertSame(

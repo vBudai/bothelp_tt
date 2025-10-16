@@ -10,7 +10,8 @@ readonly class EventMessageHandler
 {
     public function __construct(
         private LoggerInterface $logger,
-    ){}
+    ) {
+    }
 
     public function __invoke(EventMessage $message): void
     {

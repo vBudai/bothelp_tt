@@ -3,7 +3,6 @@
 namespace App\Tests\Trait;
 
 use Symfony\Component\Process\Process;
-use InvalidArgumentException;
 
 trait RunMessengerConsumerTrait
 {
@@ -17,7 +16,7 @@ trait RunMessengerConsumerTrait
             '--no-interaction',
             '--env=dev',
             "--queues=$queue",
-            '-vvv'
+            '-vvv',
         ];
 
         $process = new Process($cmd);

@@ -30,7 +30,7 @@ trait RunBinConsoleTrait
 
         if (!$process->isSuccessful()) {
             $output = $process->getOutput();
-            $error  = $process->getErrorOutput();
+            $error = $process->getErrorOutput();
             $this->fail(sprintf(
                 'Console command failed: "%s". Exit code: %s. Output: %s. Error: %s',
                 $command,
