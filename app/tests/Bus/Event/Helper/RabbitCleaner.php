@@ -24,7 +24,7 @@ readonly class RabbitCleaner
                 'vhost' => $this->conn->path,
             ];
 
-            $response = $this->makeCurlRequest(
+            $response = $this->sendRequest(
                 $apiMethod,
                 'DELETE',
                 $params
@@ -41,7 +41,7 @@ readonly class RabbitCleaner
     private function getAllQueues(): array
     {
         $apiMethod = "queues";
-        $queues = $this->makeCurlRequest($apiMethod, 'GET');
+        $queues = $this->sendRequest($apiMethod, 'GET');
 
         $names = [];
         foreach ($queues['body'] as $queue) {
@@ -68,7 +68,7 @@ readonly class RabbitCleaner
         );
     }
 
-    private function makeCurlRequest(string $apiMethod, string $httpMethod, array $params = []): array
+    private function sendRequest(string $apiMethod, string $httpMethod, array $params = []): array
     {
         $url = sprintf(
             '%s://%s:15672/api/%s',
