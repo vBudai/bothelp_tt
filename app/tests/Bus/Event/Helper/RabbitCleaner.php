@@ -3,13 +3,19 @@
 namespace App\Tests\Bus\Event\Helper;
 
 use App\Tests\Dto\RabbitConnectionDto;
+use Symfony\Component\HttpClient\HttpClient;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 readonly class RabbitCleaner
 {
+    private HttpClientInterface $httpClient;
     private RabbitConnectionDto $conn;
+
     public function __construct()
     {
         $this->conn = $this->parseRabbitDsnFromEnv();
+        $this->httpClient = HttpClient::create();
     }
 
     public function deleteAllRabbitQueues(): void
@@ -68,6 +74,9 @@ readonly class RabbitCleaner
         );
     }
 
+    /**
+     * @throws TransportExceptionInterface
+     */
     private function sendRequest(string $apiMethod, string $httpMethod, array $params = []): array
     {
         $url = sprintf(
@@ -77,35 +86,19 @@ readonly class RabbitCleaner
             $apiMethod
         );
 
-        $ch = curl_init($url);
-        $auth = $this->conn->user . ':' . $this->conn->password;
-
-        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $httpMethod);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_USERPWD, $auth);
-        curl_setopt($ch, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+        $options = [
+            'auth_basic' => [$this->conn->user, $this->conn->password]
+        ];
 
         if ($params) {
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($params));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-            ]);
+            $options['json'] = $params;
         }
 
-        $body = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $err = curl_error($ch);
-        curl_close($ch);
-
-        if ($err) {
-            throw new \RuntimeException("Curl error: $err (URL: $url)");
-        }
+        $response = $this->httpClient->request($httpMethod, $url, $options);
 
         return [
-            'code' => $httpCode,
-            'body' => json_decode($body, true),
+            'code' => $response->getStatusCode(),
+            'body' => json_decode($response->getContent(false), true),
         ];
     }
 }
