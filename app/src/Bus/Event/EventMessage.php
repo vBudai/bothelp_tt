@@ -2,6 +2,9 @@
 
 namespace App\Bus\Event;
 
+use Symfony\Component\Messenger\Attribute\AsMessage;
+
+#[AsMessage(transport: "events")]
 readonly class EventMessage
 {
     public function __construct(
@@ -12,6 +15,6 @@ readonly class EventMessage
 
     public function getRoutingKey(): string
     {
-        return 'shard.'.$this->accountId % $_ENV['EVENTS_SHARDS_COUNT'];
+        return 'shard.' . $this->accountId % $_ENV['EVENTS_SHARDS_COUNT'];
     }
 }

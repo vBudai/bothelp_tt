@@ -3,6 +3,7 @@
 namespace App\Tests\Bus\Event;
 
 use App\Tests\Bus\Event\Helper\ProcessHelper;
+use App\Tests\Bus\Event\Helper\RabbitCleaner;
 use App\Tests\Trait\RunBinConsoleTrait;
 use App\Tests\Trait\RunMessengerConsumerTrait;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -13,6 +14,7 @@ class EventOrderHandlingTest extends KernelTestCase
     use RunMessengerConsumerTrait;
 
     private readonly ProcessHelper $processHelper;
+    private readonly RabbitCleaner $rabbitCleaner;
 
     private readonly string $consolePath;
     private readonly string $logFile;
@@ -26,6 +28,7 @@ class EventOrderHandlingTest extends KernelTestCase
 
         $this->consolePath = dirname(__DIR__, 3).'/bin/console';
         $this->processHelper = new ProcessHelper();
+        $this->rabbitCleaner = new RabbitCleaner();
 
         $this->eventsCount = (int) $_ENV['EVENTS_COUNT'];
         $this->maxAccountId = (int) $_ENV['MAX_ACCOUNT_ID'];
@@ -36,6 +39,7 @@ class EventOrderHandlingTest extends KernelTestCase
             unlink($this->logFile);
         }
 
+        $this->rabbitCleaner->deleteAllRabbitQueues();
         $this->runBinConsole(
             'app:generate-events',
             600,
